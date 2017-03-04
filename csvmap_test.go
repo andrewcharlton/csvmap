@@ -1,6 +1,7 @@
 package csvmap_test
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"log"
@@ -42,4 +43,30 @@ Charles Xavier,Professor X,Telepathy
 	// Alias: Professor X
 	// Superpower: Telepathy
 	//
+}
+
+func ExampleWriter() {
+
+	headers := []string{"Name", "Alias", "Superpower"}
+	data := []map[string]string{
+		{"Name": "Logan", "Alias": "Wolverine", "Superpower": "Super healing"},
+		{"Name": "Charles Xavier", "Alias": "Professor X", "Superpower": "Telepathy"},
+	}
+
+	out := &bytes.Buffer{}
+	w := csvmap.NewWriter(out, headers)
+
+	err := w.WriteAll(data)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Println(out.String())
+
+	// Output:
+	// Name,Alias,Superpower
+	// Logan,Wolverine,Super healing
+	// Charles Xavier,Professor X,Telepathy
+	//
+
 }

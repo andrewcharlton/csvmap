@@ -25,7 +25,7 @@ Where possible, the API has been designed to stick as closely to that of the ori
 
 ## Example Usage
 
-### Reading a file 
+### Reading 
 
 ``` go
 func ExampleReader() {
@@ -63,3 +63,35 @@ Charles Xavier,Professor X,Telepathy
 	//
 }
 ```
+
+
+### Writing 
+
+``` go
+func ExampleWriter() {
+
+	headers := []string{"Name", "Alias", "Superpower"}
+	data := []map[string]string{
+		{"Name": "Logan", "Alias": "Wolverine", "Superpower": "Super healing"},
+		{"Name": "Charles Xavier", "Alias": "Professor X", "Superpower": "Telepathy"},
+	}
+
+	out := &bytes.Buffer{}
+	w := csvmap.NewWriter(out, headers)
+
+	err := w.WriteAll(data)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Println(out.String())
+
+	// Output:
+	// Name,Alias,Superpower
+	// Logan,Wolverine,Super healing
+	// Charles Xavier,Professor X,Telepathy
+	//
+
+}
+```
+
