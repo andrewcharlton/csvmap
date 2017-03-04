@@ -3,12 +3,12 @@ package csvmap
 import (
 	"encoding/csv"
 	"errors"
-	"fmt"
 	"io"
 )
 
 var (
 	ErrHeadersSet        = errors.New("headers already set")
+	ErrNoHeaders         = errors.New("empty header row")
 	ErrDuplicatedHeaders = errors.New("duplicate headers found")
 )
 
@@ -57,9 +57,6 @@ func NewReader(r io.Reader) *Reader {
 
 // getReader creates the underlying csv.Reader prior to being used.
 func (r *Reader) getReader() {
-	if r.csvReader != nil {
-		return
-	}
 
 	r.csvReader = csv.NewReader(r.in)
 	r.csvReader.Comma = r.Comma
@@ -73,9 +70,11 @@ func (r *Reader) getReader() {
 // ReadHeaders reads the first line of the file, sets the headers and returns
 // them for inspection. If there are duplicated headers in the file, it will
 // return nil, ErrDuplicatedHeaders.
+//
+// ReadHeaders should only be called once. If it is called again, it will
+// return nil, ErrHeadersSet.
 func (r *Reader) ReadHeaders() ([]string, error) {
 
-	fmt.Println(r.csvReader)
 	if r.csvReader == nil {
 		r.getReader()
 	}
@@ -89,7 +88,6 @@ func (r *Reader) ReadHeaders() ([]string, error) {
 		return nil, err
 	}
 
-	fmt.Println(headers)
 	check := map[string]struct{}{}
 	for _, h := range headers {
 		_, exists := check[h]
@@ -122,11 +120,11 @@ func (r *Reader) Read() (map[string]string, error) {
 	}
 
 	fields, err := r.csvReader.Read()
-	if err != nil && err != csv.ErrFieldCount {
+	if err != nil && (err == io.EOF || len(fields) == len(r.headers)) {
 		return nil, err
 	}
 
-	if len(fields) > len(fields) {
+	if len(fields) > len(r.headers) {
 		fields = fields[:len(r.headers)]
 	}
 
