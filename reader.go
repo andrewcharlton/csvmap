@@ -7,8 +7,14 @@ import (
 )
 
 var (
-	ErrHeadersSet        = errors.New("headers already set")
-	ErrNoHeaders         = errors.New("empty header row")
+	// ErrHeadersSet is returned when trying to call ReadHeaders more than once.
+	ErrHeadersSet = errors.New("headers already set")
+
+	// ErrNoHeaders is returned when the header row is empty.
+	ErrNoHeaders = errors.New("empty header row")
+
+	// ErrDuplicatedHeaders is returned when there are duplicated items in the
+	// header row.
 	ErrDuplicatedHeaders = errors.New("duplicate headers found")
 )
 
