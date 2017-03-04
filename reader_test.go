@@ -21,7 +21,7 @@ var readTests = []struct {
 		},
 	},
 	{
-		Name:  "Mutliple rows",
+		Name:  "Multiple rows",
 		Input: "A,B,C,D\n1,2,3,4\n5,6,7,8",
 		Output: []map[string]string{
 			{"A": "1", "B": "2", "C": "3", "D": "4"},
