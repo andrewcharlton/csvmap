@@ -7,25 +7,23 @@ import (
 )
 
 var (
-	// ErrHeadersSet is returned when trying to call ReadHeaders more than once.
-	ErrHeadersSet = errors.New("headers already set")
+	// errHeadersSet is returned when trying to call ReadHeaders more than once.
+	errHeadersSet = errors.New("headers already set")
 
-	// ErrNoHeaders is returned when the header row is empty.
-	ErrNoHeaders = errors.New("empty header row")
-
-	// ErrDuplicatedHeaders is returned when there are duplicated items in the
+	// ErrDuplicateHeaders is returned when there are duplicated items in the
 	// header row.
-	ErrDuplicatedHeaders = errors.New("duplicate headers found")
+	ErrDuplicateHeaders = errors.New("duplicate headers found")
 )
 
 // A Reader returns records (a map of values) from a csv-encoded file.
 //
 // As returned by NewReader, a Reader expects input conforming to RFC 4180.
 // The exported fields can be changed to customize the details before the
-// first call to ReadHeaders/Read/ReadAll.
+// first call to Headers/Read/ReadAll.
 //
-// If ReadHeaders has not been called prior to a call to Read/ReadAll, it
-// will be performed first.
+// The header row will be read on the first call to Headers/Read/ReadAll.
+// If there are duplicated keys in the header, an ErrDuplicateHeaders error
+// will be returned at this point.
 type Reader struct {
 	// Comma is the field delimiter.
 	// It is set to comma (',') by NewReader.
@@ -55,9 +53,10 @@ type Reader struct {
 // NewReader returns a reader that will read from r.
 func NewReader(r io.Reader) *Reader {
 	return &Reader{
-		Comma:   ',',
-		in:      r,
-		headers: nil,
+		Comma:     ',',
+		in:        r,
+		headers:   nil,
+		csvReader: nil,
 	}
 }
 
@@ -73,39 +72,51 @@ func (r *Reader) getReader() {
 
 }
 
-// ReadHeaders reads the first line of the file, sets the headers and returns
-// them for inspection. If there are duplicated headers in the file, it will
-// return nil, ErrDuplicatedHeaders.
+// readHeaders reads the first line of the file and sets the headers.
+// If there are duplicated headers in the file, it will return  ErrDuplicatedHeaders.
 //
-// ReadHeaders should only be called once. If it is called again, it will
+// readHeaders should only be called once. If it is called again, it will
 // return nil, ErrHeadersSet.
-func (r *Reader) ReadHeaders() ([]string, error) {
+func (r *Reader) readHeaders() error {
 
 	if r.csvReader == nil {
 		r.getReader()
 	}
 
 	if r.headers != nil {
-		return nil, ErrHeadersSet
+		return errHeadersSet
 	}
 
 	headers, err := r.csvReader.Read()
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	check := map[string]struct{}{}
 	for _, h := range headers {
 		_, exists := check[h]
 		if exists {
-			return nil, ErrDuplicatedHeaders
+			return ErrDuplicateHeaders
 		}
 		check[h] = struct{}{}
 	}
 
-	r.headers = append([]string{}, headers...)
-	return headers, nil
+	r.headers = headers
+	return nil
+}
 
+// Headers returns the column headers
+func (r *Reader) Headers() ([]string, error) {
+
+	if r.headers == nil {
+		err := r.readHeaders()
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	headers := append([]string{}, r.headers...)
+	return headers, nil
 }
 
 // Read reads one record (a map of fields to values). If the record
@@ -119,7 +130,7 @@ func (r *Reader) ReadHeaders() ([]string, error) {
 func (r *Reader) Read() (map[string]string, error) {
 
 	if r.headers == nil {
-		_, err := r.ReadHeaders()
+		err := r.readHeaders()
 		if err != nil {
 			return nil, err
 		}

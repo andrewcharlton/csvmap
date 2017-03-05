@@ -85,7 +85,7 @@ func TestReadHeaders(t *testing.T) {
 	input := strings.NewReader("A,B,C\n1,2,3")
 	r := NewReader(input)
 
-	headers, err := r.ReadHeaders()
+	headers, err := r.Headers()
 	exp := []string{"A", "B", "C"}
 	if !reflect.DeepEqual(headers, exp) {
 		t.Errorf("out=%q, want=%q", headers, exp)
@@ -95,12 +95,24 @@ func TestReadHeaders(t *testing.T) {
 		t.Errorf("unexpected error: %q", err)
 	}
 
-	headers, err = r.ReadHeaders()
-	if headers != nil {
-		t.Errorf("out=%q, expected=nil", headers)
-	}
-	if err != ErrHeadersSet {
-		t.Errorf("err %q, want error %q", err, ErrHeadersSet)
+	err = r.readHeaders()
+	if err != errHeadersSet {
+		t.Errorf("err %q, want error %q", err, errHeadersSet)
 	}
 
+}
+
+func TestDuplicateHeaders(t *testing.T) {
+
+	input := strings.NewReader("A,B,C,A\n1,2,3,4")
+	r := NewReader(input)
+
+	headers, err := r.Headers()
+	if headers != nil {
+		t.Errorf("Unexpected headers: %v", headers)
+	}
+
+	if err != ErrDuplicateHeaders {
+		t.Errorf("Unexpected error: %v", err)
+	}
 }
