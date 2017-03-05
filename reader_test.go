@@ -96,8 +96,8 @@ func TestReadHeaders(t *testing.T) {
 	}
 
 	err = r.readHeaders()
-	if err != errHeadersSet {
-		t.Errorf("err %q, want error %q", err, errHeadersSet)
+	if err != ErrHeaderSet {
+		t.Errorf("err %q, want error %q", err, ErrHeaderSet)
 	}
 
 }
@@ -114,5 +114,70 @@ func TestDuplicateHeaders(t *testing.T) {
 
 	if err != ErrDuplicateHeaders {
 		t.Errorf("Unexpected error: %v", err)
+	}
+}
+
+func TestDiscard(t *testing.T) {
+
+	in := "\n\n\n\nA,B,C\n1,2,3\n"
+
+	testcases := []struct {
+		Name    string
+		N       int
+		Err     string
+		Headers []string
+		HeadErr string
+	}{
+		{
+			Name:    "Simple",
+			N:       4,
+			Err:     "",
+			Headers: []string{"A", "B", "C"},
+			HeadErr: "",
+		},
+		{
+			Name:    "EOF",
+			N:       10,
+			Err:     "EOF",
+			Headers: nil,
+			HeadErr: "EOF",
+		},
+	}
+
+	for _, tc := range testcases {
+
+		r := NewReader(strings.NewReader(in))
+
+		err := r.Discard(tc.N)
+		if err == nil && tc.Err != "" {
+			t.Errorf("%v. Missing error. Got %q, Want %q", tc.Name, err, tc.Err)
+		}
+		if err != nil && (tc.Err == "" || !strings.Contains(err.Error(), tc.Err)) {
+			t.Errorf("%v. Got %q, want error %q", tc.Name, err, tc.Err)
+		}
+
+		headers, err := r.Headers()
+		if !reflect.DeepEqual(headers, tc.Headers) {
+			t.Errorf("%v. Wrong headers. Got %q, Want %q", tc.Name, headers, tc.Headers)
+		}
+
+		if err == nil && tc.HeadErr != "" {
+			t.Errorf("%v. Missing error. Got %q, Want %q", tc.Name, err, tc.HeadErr)
+		}
+		if err != nil && (tc.HeadErr == "" || !strings.Contains(err.Error(), tc.HeadErr)) {
+			t.Errorf("%v. Got %q, want error %q", tc.Name, err, tc.HeadErr)
+		}
+
+	}
+}
+
+func TestDiscardErr(t *testing.T) {
+
+	r := NewReader(strings.NewReader("A,B,C\n1,2,3"))
+	r.Headers()
+
+	err := r.Discard(2)
+	if err != ErrHeaderSet {
+		t.Errorf("Unexpected error: Got %q, want %q", err, ErrHeaderSet)
 	}
 }

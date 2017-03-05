@@ -1,14 +1,16 @@
 package csvmap
 
 import (
+	"bufio"
 	"encoding/csv"
 	"errors"
 	"io"
 )
 
 var (
-	// errHeadersSet is returned when trying to call ReadHeaders more than once.
-	errHeadersSet = errors.New("headers already set")
+	// ErrHeaderSet is returned when trying to set the headers, after they
+	// have already been initialised.
+	ErrHeaderSet = errors.New("headers already set")
 
 	// ErrDuplicateHeaders is returned when there are duplicated items in the
 	// header row.
@@ -60,6 +62,32 @@ func NewReader(r io.Reader) *Reader {
 	}
 }
 
+// Discard ignores the first n lines of the input reader before
+// reading the headers. If should be called before the first call
+// to Headers/Read/ReadAll, otherwise it will return an ErrHeaderSet
+// error.
+//
+// If there are insufficient lines to discard, it will return an
+// io.EOF error.
+func (r *Reader) Discard(n int) error {
+
+	if r.csvReader != nil {
+		return ErrHeaderSet
+	}
+
+	buf := bufio.NewReader(r.in)
+
+	for i := 0; i < n; i++ {
+		_, err := buf.ReadString('\n')
+		if err != nil {
+			return err
+		}
+	}
+
+	r.in = buf
+	return nil
+}
+
 // getReader creates the underlying csv.Reader prior to being used.
 func (r *Reader) getReader() {
 
@@ -84,7 +112,7 @@ func (r *Reader) readHeaders() error {
 	}
 
 	if r.headers != nil {
-		return errHeadersSet
+		return ErrHeaderSet
 	}
 
 	headers, err := r.csvReader.Read()
