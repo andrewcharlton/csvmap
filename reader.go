@@ -99,16 +99,11 @@ func (r *Reader) getReader() {
 // readHeaders reads the first line of the file and sets the headers.
 // If there are duplicated headers in the file, it will return  ErrDuplicatedHeaders.
 //
-// readHeaders should only be called once. If it is called again, it will
-// return nil, ErrHeadersSet.
+// readHeaders should only be called once.
 func (r *Reader) readHeaders() error {
 
 	if r.csvReader == nil {
 		r.getReader()
-	}
-
-	if r.headers != nil {
-		return ErrHeaderSet
 	}
 
 	headers, err := r.csvReader.Read()
