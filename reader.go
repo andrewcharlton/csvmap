@@ -8,10 +8,6 @@ import (
 )
 
 var (
-	// ErrHeaderSet is returned when trying to set the headers, after they
-	// have already been initialised.
-	ErrHeaderSet = errors.New("headers already set")
-
 	// ErrDuplicateHeaders is returned when there are duplicated items in the
 	// header row.
 	ErrDuplicateHeaders = errors.New("duplicate headers found")
