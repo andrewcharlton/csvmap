@@ -94,12 +94,6 @@ func TestReadHeaders(t *testing.T) {
 	if err != nil {
 		t.Errorf("unexpected error: %q", err)
 	}
-
-	err = r.readHeaders()
-	if err != ErrHeaderSet {
-		t.Errorf("err %q, want error %q", err, ErrHeaderSet)
-	}
-
 }
 
 func TestDuplicateHeaders(t *testing.T) {
