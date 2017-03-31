@@ -11,6 +11,10 @@ var (
 	// ErrDuplicateHeaders is returned when there are duplicated items in the
 	// header row.
 	ErrDuplicateHeaders = errors.New("duplicate headers found")
+
+	// ErrHeaderSet is returned when trying to discard lines after the headers
+	// have already been read - either through Headers() or Read/ReadAll.
+	ErrHeaderSet = errors.New("headers set, can't discard lines")
 )
 
 // A Reader returns records (a map of values) from a csv-encoded file.
